@@ -1,0 +1,69 @@
+version: "3.9"
+
+# All configurable values come from .env in this directory (docker compose
+# loads it automatically for the ${VAR} substitutions below, and env_file:
+# on the api service passes the same file straight into the container).
+# Copy .env.example to .env before running `docker-compose up`.
+#
+# Note: POSTGRES_USER/PASSWORD/DB below must match the credentials embedded
+# in DATABASE_URL in .env — compose can't parse a URL into parts for you.
+# If you change one, change the other.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: peblo
+      POSTGRES_PASSWORD: peblo
+      POSTGRES_DB: peblo
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peblo"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - api_storage:/storage
+      - ./data:/data:ro
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cms:
+    build:
+      context: ./cms
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      - api
+    ports:
+      - "5174:80"
+
+  viewer:
+    build:
+      context: ./viewer
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  db_data:
+  api_storage:
