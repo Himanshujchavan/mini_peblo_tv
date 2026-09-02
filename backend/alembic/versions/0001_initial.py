@@ -20,9 +20,17 @@ artwork_kind_enum = postgresql.ENUM("poster", "banner", "thumbnail", name="artwo
 
 def upgrade():
     bind = op.get_bind()
-    role_enum.create(bind, checkfirst=True)
-    status_enum.create(bind, checkfirst=True)
-    artwork_kind_enum.create(bind, checkfirst=True)
+
+    # Manually check and create enum types to avoid DuplicateObject errors
+    for enum_name, values in [
+        ("role", ["editor", "admin"]),
+        ("status", ["draft", "published"]),
+        ("artworkkind", ["poster", "banner", "thumbnail"]),
+    ]:
+        # Check if the type already exists in pg_type
+        res = bind.execute(sa.text(f"SELECT 1 FROM pg_type WHERE typname='{enum_name}'")).fetchone()
+        if not res:
+            bind.execute(sa.text(f"CREATE TYPE {enum_name} AS ENUM ({', '.join([f"'{v}'" for v in values])})"))
 
     op.create_table(
         "users",
