@@ -1,8 +1,11 @@
 import json
 import os
 from functools import lru_cache
+from pathlib import Path
 
-REFERENCE_PATH = os.environ.get("REFERENCE_JSON_PATH", "/data/reference.json")
+REFERENCE_PATH = Path(os.environ.get("REFERENCE_JSON_PATH", "/data/reference.json"))
+if not REFERENCE_PATH.is_file() and "REFERENCE_JSON_PATH" not in os.environ:
+    REFERENCE_PATH = Path(__file__).resolve().parents[2] / "data" / "reference.json"
 
 
 @lru_cache

@@ -163,75 +163,105 @@ export default function ShowEditor() {
   );
 }
 
-function AddSeasonForm({ onAdd, pending }: { onAdd: (n: number) => void; pending: boolean }) {
-  const [number, setNumber] = useState(1);
-  return (
-    <div className="toolbar">
-      <input
-        className="input"
-        style={{ minWidth: 100 }}
-        type="number"
-        min={0}
-        value={number}
-        onChange={(e) => setNumber(parseInt(e.target.value || "0", 10))}
-      />
-      <button className="btn" disabled={pending} onClick={() => onAdd(number)}>
-        + Add season
-      </button>
-    </div>
-  );
-}
+  function AddSeasonForm({ onAdd, pending }: { onAdd: (n: number) => void; pending: boolean }) {
+    const [number, setNumber] = useState(1);
+    const [expanded, setExpanded] = useState(false);
 
-function SeasonBlock({ season }: { season: Season }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const episodesQuery = useQuery({
-    queryKey: ["episodes", season.id],
-    queryFn: () => api<Episode[]>(`/admin/seasons/${season.id}/episodes`),
-    enabled: open,
-  });
+    function submit() {
+      onAdd(number);
+      setNumber(1);
+      setExpanded(false);
+    }
 
-  const addEpisode = useMutation({
-    mutationFn: (body: any) =>
-      api<Episode>(`/admin/seasons/${season.id}/episodes`, { method: "POST", body: JSON.stringify(body) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["episodes", season.id] }),
-  });
+    return (
+      <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+        <button
+          className="btn"
+          style={{ width: "100%", textAlign: "left", background: expanded ? "#f0f4ff" : "#fafbfe", marginBottom: expanded ? 12 : 0, borderRadius: "var(--radius)" }}
+          onClick={() => setExpanded((o) => !o)}
+        >
+          {expanded ? "▾" : "▸"} <strong>+ Add new season</strong>
+        </button>
+        {expanded && (
+          <div style={{ padding: "12px 0" }}>
+            <div className="form-grid" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                <label>Season Number</label>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  value={number}
+                  onChange={(e) => setNumber(parseInt(e.target.value || "0", 10))}
+                />
+                <span className="hint">Use 0 for trailers. Regular seasons start at 1.</span>
+              </div>
+            </div>
+            <div className="toolbar">
+              <button className="btn btn-primary" disabled={pending} onClick={submit}>
+                {pending ? "Creating..." : "✓ Add season"}
+              </button>
+              <button className="btn" onClick={() => setExpanded(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-  return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 8, marginBottom: 12 }}>
-      <button
-        className="btn"
-        style={{ width: "100%", textAlign: "left", border: "none", background: "#fafbfe" }}
-        onClick={() => setOpen((o) => !o)}
-      >
-        {season.number === 0 ? "🎬 Trailers (Season 0)" : `Season ${season.number}`} {open ? "▾" : "▸"}
-      </button>
-      {open && (
-        <div style={{ padding: 14 }}>
-          {episodesQuery.isLoading && <div className="spinner-text">Loading episodes...</div>}
-          {episodesQuery.data && episodesQuery.data.length > 0 && (
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th><th>Title</th><th>Lang</th><th>Group</th><th>Duration</th><th>Artwork</th><th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {episodesQuery.data.map((ep) => (
-                  <EpisodeRow key={ep.id} episode={ep} seasonId={season.id} />
-                ))}
-              </tbody>
-            </table>
-          )}
-          {episodesQuery.data && episodesQuery.data.length === 0 && (
-            <p className="page-sub">No episodes yet.</p>
-          )}
-          <AddEpisodeForm onAdd={(body) => addEpisode.mutate(body)} pending={addEpisode.isPending} error={addEpisode.error as Error | null} />
-        </div>
-      )}
-    </div>
-  );
-}
+  function SeasonBlock({ season }: { season: Season }) {
+    const qc = useQueryClient();
+    const [open, setOpen] = useState(false);
+    const episodesQuery = useQuery({
+      queryKey: ["episodes", season.id],
+      queryFn: () => api<Episode[]>(`/admin/seasons/${season.id}/episodes`),
+      enabled: open,
+    });
+
+    const addEpisode = useMutation({
+      mutationFn: (body: any) =>
+        api<Episode>(`/admin/seasons/${season.id}/episodes`, { method: "POST", body: JSON.stringify(body) }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["episodes", season.id] }),
+    });
+
+    return (
+      <div style={{ border: "1px solid var(--border)", borderRadius: 8, marginBottom: 12 }}>
+        <button
+          className="btn"
+          style={{ width: "100%", textAlign: "left", border: "none", background: "#fafbfe" }}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {season.number === 0 ? "🎬 Trailers (Season 0)" : `Season ${season.number}`} {open ? "▾" : "▸"}
+        </button>
+        {open && <div style={{ fontSize: "0.85rem", color: "var(--ink-soft)", padding: "8px 14px", background: "#f9fafb", borderBottom: "1px solid var(--border)" }}>
+          {episodesQuery.isLoading ? "Loading episodes..." : `${episodesQuery.data?.length || 0} episode${episodesQuery.data?.length !== 1 ? "s" : ""}`}
+        </div>}
+        {open && (
+          <div style={{ padding: 14 }}>
+            {episodesQuery.isLoading && <div className="spinner-text">Loading episodes...</div>}
+            {episodesQuery.data && episodesQuery.data.length > 0 && (
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th><th>Title</th><th>Lang</th><th>Group</th><th>Duration</th><th>Artwork</th><th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {episodesQuery.data.map((ep) => (
+                    <EpisodeRow key={ep.id} episode={ep} seasonId={season.id} />
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {episodesQuery.data && episodesQuery.data.length === 0 && (
+              <p className="page-sub" style={{ marginBottom: 12 }}>No episodes yet. Add one below! 👇</p>
+            )}
+            <AddEpisodeForm onAdd={(body) => addEpisode.mutate(body)} pending={addEpisode.isPending} error={addEpisode.error as Error | null} />
+          </div>
+        )}
+      </div>
+    );
+  }
 
 function EpisodeRow({ episode, seasonId }: { episode: Episode; seasonId: string }) {
   const qc = useQueryClient();
@@ -268,11 +298,18 @@ function EpisodeRow({ episode, seasonId }: { episode: Episode; seasonId: string 
           </select>
         </td>
       </tr>
-      {patch.isError && (
         <tr>
-          <td colSpan={7}><div className="callout callout-error" style={{ margin: "6px 0" }}>{(patch.error as Error).message}</div></td>
+          <td colSpan={7}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "6px 0" }}>
+              {patch.isError && (
+                <div className="callout callout-error" style={{ flex: 1, margin: 0 }}>
+                  {(patch.error as Error).message}
+                </div>
+              )}
+              <EpisodeActions episode={episode} seasonId={seasonId} />
+            </div>
+          </td>
         </tr>
-      )}
       {showArt && (
         <tr>
           <td colSpan={7}>
@@ -289,39 +326,145 @@ function EpisodeRow({ episode, seasonId }: { episode: Episode; seasonId: string 
   );
 }
 
-function AddEpisodeForm({ onAdd, pending, error }: { onAdd: (body: any) => void; pending: boolean; error: Error | null }) {
-  const [title, setTitle] = useState("");
-  const [episodeNumber, setEpisodeNumber] = useState(1);
-  const [language, setLanguage] = useState("en");
-  const [contentGroup, setContentGroup] = useState("");
-  const [duration, setDuration] = useState(600);
+  function EpisodeActions({ episode, seasonId }: { episode: Episode; seasonId: string }) {
+    const qc = useQueryClient();
+    const [deleting, setDeleting] = useState(false);
 
-  function submit() {
-    onAdd({
-      title,
-      episode_number: episodeNumber,
-      language,
-      content_group: contentGroup || null,
-      duration_seconds: duration,
-      status: "draft",
+    const deleteEpisode = useMutation({
+      mutationFn: () => api(`/admin/episodes/${episode.id}`, { method: "DELETE" }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["episodes", seasonId] }),
     });
-    setTitle("");
+
+    const toggleVisibility = useMutation({
+      mutationFn: () => api<Episode>(`/admin/episodes/${episode.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: episode.status === "published" ? "draft" : "published" }),
+      }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["episodes", seasonId] }),
+    });
+
+    if (deleting) {
+      return (
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <span style={{ fontSize: "0.9rem", color: "var(--danger)" }}>Delete "{episode.title}"?</span>
+          <button
+            className="btn"
+            style={{ padding: "4px 10px", background: "var(--danger)", color: "white", fontSize: "0.85rem" }}
+            disabled={deleteEpisode.isPending}
+            onClick={() => deleteEpisode.mutate()}
+          >
+            {deleteEpisode.isPending ? "..." : "Yes, delete"}
+          </button>
+          <button
+            className="btn"
+            style={{ padding: "4px 10px", fontSize: "0.85rem" }}
+            disabled={deleteEpisode.isPending}
+            onClick={() => setDeleting(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          className="btn"
+          style={{
+            padding: "4px 10px",
+            fontSize: "0.85rem",
+            background: episode.status === "published" ? "#e8f7f1" : "#fff7e6",
+            color: episode.status === "published" ? "var(--success)" : "#b88d0b",
+            border: "1px solid currentColor",
+          }}
+          disabled={toggleVisibility.isPending}
+          onClick={() => toggleVisibility.mutate()}
+          title={episode.status === "published" ? "Hide episode (make draft)" : "Show episode (publish)"}
+        >
+          {toggleVisibility.isPending ? "..." : episode.status === "published" ? "👁️ Visible" : "👁️‍🗨️ Hidden"}
+        </button>
+        <button
+          className="btn"
+          style={{ padding: "4px 10px", fontSize: "0.85rem", background: "#fdeceb", color: "var(--danger)", border: "1px solid currentColor" }}
+          onClick={() => setDeleting(true)}
+          title="Delete this episode"
+        >
+          🗑️ Delete
+        </button>
+      </div>
+    );
   }
 
-  return (
-    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-      <div className="toolbar">
-        <input className="input" placeholder="Episode title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <input className="input" style={{ minWidth: 80 }} type="number" placeholder="#" value={episodeNumber} onChange={(e) => setEpisodeNumber(parseInt(e.target.value || "1", 10))} />
-        <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-          {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-        <input className="input" placeholder="content_group (optional)" value={contentGroup} onChange={(e) => setContentGroup(e.target.value)} />
-        <input className="input" style={{ minWidth: 100 }} type="number" placeholder="seconds" value={duration} onChange={(e) => setDuration(parseInt(e.target.value || "0", 10))} />
-        <button className="btn btn-primary" disabled={!title || pending} onClick={submit}>+ Add episode</button>
+  function AddEpisodeForm({ onAdd, pending, error }: { onAdd: (body: any) => void; pending: boolean; error: Error | null }) {
+    const [title, setTitle] = useState("");
+    const [episodeNumber, setEpisodeNumber] = useState(1);
+    const [language, setLanguage] = useState("en");
+    const [contentGroup, setContentGroup] = useState("");
+    const [duration, setDuration] = useState(600);
+    const [expanded, setExpanded] = useState(false);
+
+    function submit() {
+      onAdd({
+        title,
+        episode_number: episodeNumber,
+        language,
+        content_group: contentGroup || null,
+        duration_seconds: duration,
+        status: "draft",
+      });
+      setTitle("");
+      setEpisodeNumber(1);
+      setLanguage("en");
+      setContentGroup("");
+      setDuration(600);
+    }
+
+    return (
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+        <button
+          className="btn"
+          style={{ width: "100%", textAlign: "left", background: expanded ? "#f0f4ff" : "#fafbfe", marginBottom: expanded ? 12 : 0, borderRadius: "var(--radius)" }}
+          onClick={() => setExpanded((o) => !o)}
+        >
+          {expanded ? "▾" : "▸"} <strong>+ Add new episode</strong>
+        </button>
+        {expanded && (
+          <div style={{ padding: "12px 0" }}>
+            <div className="form-grid" style={{ marginBottom: 12 }}>
+              <div className="form-field">
+                <label>Episode Title</label>
+                <input className="input" placeholder="e.g., The Mystery of the Forest" value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>Episode #</label>
+                <input className="input" type="number" min={1} value={episodeNumber} onChange={(e) => setEpisodeNumber(parseInt(e.target.value || "1", 10))} />
+              </div>
+              <div className="form-field">
+                <label>Language</label>
+                <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  {LANGUAGES.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Duration (seconds)</label>
+                <input className="input" type="number" min={1} value={duration} onChange={(e) => setDuration(parseInt(e.target.value || "0", 10))} />
+              </div>
+              <div className="form-field" style={{ gridColumn: "1 / -1" }}>
+                <label>Content Group (optional)</label>
+                <input className="input" placeholder="e.g., 'episode_1' to link language variants together" value={contentGroup} onChange={(e) => setContentGroup(e.target.value)} />
+                <span className="hint">Link episodes with the same content_group but different languages as variants.</span>
+              </div>
+            </div>
+            {error && <div className="callout callout-error" style={{ marginBottom: 12 }}>{error.message}</div>}
+            <div className="toolbar">
+              <button className="btn btn-primary" disabled={!title || pending} onClick={submit}>
+                {pending ? "Creating..." : "✓ Add episode"}
+              </button>
+              <button className="btn" onClick={() => setExpanded(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
-      <p className="hint">Give two episodes the same content_group + different languages to link them as language variants.</p>
-      {error && <div className="callout callout-error">{error.message}</div>}
-    </div>
-  );
-}
+    );
+  }

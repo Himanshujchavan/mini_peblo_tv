@@ -58,7 +58,7 @@ export default function ArtworkSlot({
   return (
     <div className="artwork-slot">
       <div style={{ fontWeight: 700, marginBottom: 4, textTransform: "capitalize" }}>{kind}</div>
-      <div className="spec">{SPECS[kind]}, under 200KB</div>
+      <div className="spec">{SPECS[kind]}, under 300KB</div>
       {previewUrl && <img src={previewUrl} alt={`${kind} preview`} />}
       <input
         ref={inputRef}

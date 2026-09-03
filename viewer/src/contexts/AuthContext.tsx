@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, firebaseConfigError } from '../firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +17,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -25,14 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, pass: string) => {
+    if (!auth) throw new Error(firebaseConfigError || 'Firebase authentication is unavailable.');
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const signup = async (email: string, pass: string) => {
+    if (!auth) throw new Error(firebaseConfigError || 'Firebase authentication is unavailable.');
     await createUserWithEmailAndPassword(auth, email, pass);
   };
 
   const logout = async () => {
+    if (!auth) return;
     await signOut(auth);
   };
 

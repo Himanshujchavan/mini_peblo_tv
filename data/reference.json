@@ -33,7 +33,7 @@
         600,
         900
       ],
-      "max_kb": 200
+      "max_kb": 300
     },
     "banner": {
       "aspect": "16:9",
@@ -41,7 +41,7 @@
         1280,
         720
       ],
-      "max_kb": 200
+      "max_kb": 300
     },
     "thumbnail": {
       "aspect": "16:9",
@@ -49,7 +49,7 @@
         640,
         360
       ],
-      "max_kb": 200
+      "max_kb": 300
     }
   },
   "conventions": {

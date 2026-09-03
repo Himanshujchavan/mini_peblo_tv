@@ -23,6 +23,7 @@ part of the exercise:
 import io
 import json
 import random
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.exc import IntegrityError
@@ -34,7 +35,9 @@ from app.reference import allowed_sections, allowed_categories, allowed_language
 from app.storage import get_storage
 from app.services.publish_service import run_publish, PublishBlocked
 
-SEED_PATH = "/data/seed_shows.json"
+SEED_PATH = Path("/data/seed_shows.json")
+if not SEED_PATH.is_file():
+    SEED_PATH = Path(__file__).resolve().parents[2] / "data" / "seed_shows.json"
 
 PALETTE = ["#FF6B6B", "#4ECDC4", "#FFD93D", "#6C5CE7", "#FF9F43", "#1DD1A1", "#54A0FF", "#F368E0"]
 
