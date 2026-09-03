@@ -295,7 +295,30 @@ viewer/     React + TypeScript public viewer
 data/       reference.json, seed_shows.json, and supplied artwork assets
 ```
 
-## 8. Deliberate Scope Decisions
+## 8. CI/CD Workflow
+
+The workflow in `.github/workflows/ci.yml` runs on pushes and pull requests to
+`main`. It contains these stages:
+
+1. **Lint:** runs Ruff against the backend and TypeScript checks through each
+  frontend's `npm run lint` script.
+2. **Tests:** installs backend dependencies and runs the complete `pytest`
+  suite using the isolated SQLite test setup.
+3. **Frontend builds:** runs `npm run build` for both CMS and viewer.
+4. **Build images:** builds the backend, CMS, and viewer Docker images and
+  tags them with the commit SHA, proving that deployable artifacts can be
+  produced.
+5. **Deploy dry run:** reaches a `staging` deployment environment and prints
+  the intended deployment handoff. It explains that a real implementation
+  would authenticate to a registry/cloud provider, push the three immutable
+  image tags, and update the staging services. No cloud credentials or real
+  infrastructure are required for this assignment.
+
+The deploy stage is deliberately written as a dry run: it demonstrates the
+deployment boundary and ordering while avoiding a fake or credential-dependent
+cloud deployment.
+
+## 9. Deliberate Scope Decisions
 
 - The published catalogue is a pre-built file so the public viewer is read
   optimized, cacheable, and isolated from editor database changes.

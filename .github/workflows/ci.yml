@@ -7,7 +7,29 @@ on:
     branches: [ main ]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend lint tools
+        run: pip install ruff==0.6.9
+      - name: Lint backend
+        run: ruff check backend/app backend/tests
+      - name: Check frontend types
+        run: |
+          cd cms
+          npm install
+          npm run lint
+          cd ../viewer
+          npm install
+          npm run lint
+
   backend-tests:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +47,7 @@ jobs:
           pytest
 
   frontend-build:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,3 +66,28 @@ jobs:
           cd viewer
           npm install
           npm run build
+
+  build-images:
+    needs: [backend-tests, frontend-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t peblo-tv-api:${{ github.sha }} ./backend
+      - name: Build CMS image
+        run: docker build --build-arg VITE_API_BASE_URL=http://localhost:8000 -t peblo-tv-cms:${{ github.sha }} ./cms
+      - name: Build viewer image
+        run: docker build --build-arg VITE_API_BASE_URL=http://localhost:8000 -t peblo-tv-viewer:${{ github.sha }} ./viewer
+
+  deploy:
+    needs: build-images
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deployment dry run
+        run: |
+          echo "Deployment stage reached for commit $GITHUB_SHA."
+          echo "A real deployment would authenticate to the target registry/cloud here."
+          echo "It would push peblo-tv-api, peblo-tv-cms, and peblo-tv-viewer tagged $GITHUB_SHA"
+          echo "and update the staging service definitions to those immutable image tags."
