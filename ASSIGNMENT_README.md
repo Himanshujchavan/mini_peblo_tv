@@ -318,6 +318,11 @@ The deploy stage is deliberately written as a dry run: it demonstrates the
 deployment boundary and ordering while avoiding a fake or credential-dependent
 cloud deployment.
 
+The workflow uses the committed lockfiles in `cms/package-lock.json` and
+`viewer/package-lock.json` through `cache-dependency-path`. Backend tests run
+with `python -m pytest` so the test runner is guaranteed to use the Python
+environment configured by `setup-python`.
+
 ## 9. Deliberate Scope Decisions
 
 - The published catalogue is a pre-built file so the public viewer is read
