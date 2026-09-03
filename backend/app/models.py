@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, String, Integer, Boolean, ForeignKey, DateTime, Enum, UniqueConstraint,
+    Column, String, Integer, ForeignKey, DateTime, Enum, UniqueConstraint,
     Index, Text, JSON
 )
 from sqlalchemy.orm import relationship

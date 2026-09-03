@@ -102,7 +102,7 @@ def test_publish_succeeds_and_groups_languages(client, editor_token, admin_token
     section = next(s for s in catalogue["sections"] if s["section"] == "featured")
     show = section["shows"][0]
     assert len(show["episodes"]) == 1  # the two language variants collapsed into ONE entry
-    langs = sorted(l["language"] for l in show["episodes"][0]["languages"])
+    langs = sorted(language_entry["language"] for language_entry in show["episodes"][0]["languages"])
     assert langs == ["en", "hi"]
 
 

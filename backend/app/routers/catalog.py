@@ -54,7 +54,7 @@ def search_catalog(
                 ep_title_match = q_lower in ep["title"].lower() if q_lower else False
                 langs = ep["languages"]
                 if language:
-                    langs = [l for l in langs if l["language"] == language]
+                    langs = [language_entry for language_entry in langs if language_entry["language"] == language]
                     if not langs:
                         continue
                 if q_lower and not (show_title_match or category_match or ep_title_match):

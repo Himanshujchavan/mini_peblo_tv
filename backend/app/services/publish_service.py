@@ -90,7 +90,7 @@ def _build_catalogue_dict(db: Session) -> dict:
         # deterministic order: by season number, then episode number
         episodes_out = [grouped[k] for k in sorted(order, key=lambda k: (k[0], k[1]))]
         for ep in episodes_out:
-            ep["languages"].sort(key=lambda l: l["language"])
+            ep["languages"].sort(key=lambda language_entry: language_entry["language"])
 
         show_entry = {
             "show_id": show.id,

@@ -1,10 +1,10 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session, joinedload
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas
-from app.auth import require_editor, require_admin, CurrentUser
+from app.auth import require_editor, CurrentUser
 from app.reference import allowed_categories, allowed_sections
 
 router = APIRouter(prefix="/admin/shows", tags=["shows"])
@@ -43,7 +43,6 @@ def list_shows(
         query = query.filter(models.Show.status == status)
     if language:
         query = query.join(models.Season).join(models.Episode).filter(models.Episode.language == language).distinct()
-    total = query.count()
     items = query.order_by(models.Show.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     return items
 
