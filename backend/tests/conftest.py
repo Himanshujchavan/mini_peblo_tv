@@ -1,4 +1,5 @@
 import os
+import tempfile
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -6,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("REFERENCE_JSON_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "data", "reference.json"))
+os.environ.setdefault("STORAGE_LOCAL_PATH", tempfile.mkdtemp(prefix="peblo-test-storage-"))
 
 from app.database import Base, get_db
 from app import models
